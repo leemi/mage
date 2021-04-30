@@ -89,9 +89,6 @@ public class MageActionCallback implements ActionCallback {
     // shows the alternative card the normal card or the alternative card (copy source, other flip side, other transformed side)
     private volatile EnlargeMode enlargeMode;
 
-    private static final ScheduledExecutorService timeoutExecutor = Executors.newScheduledThreadPool(1);
-    private ScheduledFuture<?> hideTimeout;
-
     private MageCard prevCardPanel;
     private boolean startedDragging;
     private boolean isDragging; // TODO: remove drag hand code to the hand panels
@@ -135,10 +132,6 @@ public class MageActionCallback implements ActionCallback {
         if (Plugins.instance.isCardPluginLoaded()) {
             this.popupData = data;
             handleMouseMoveOverNewCard(data);
-
-            if (bigCard == null) {
-                return;
-            }
             updateCardHints(data);
         }
     }
@@ -160,18 +153,8 @@ public class MageActionCallback implements ActionCallback {
             data.getPopupText().updateText();
             tooltipPopup = factory.getPopup(cardPanel, data.getPopupText(), (int) data.getLocationOnScreen().getX() + data.getPopupOffsetX(), (int) data.getLocationOnScreen().getY() + data.getPopupOffsetY() + 40);
             tooltipPopup.show();
-            // hack to get popup to resize to fit text
-            tooltipPopup.hide();
-            tooltipPopup = factory.getPopup(cardPanel, data.getPopupText(), (int) data.getLocationOnScreen().getX() + data.getPopupOffsetX(), (int) data.getLocationOnScreen().getY() + data.getPopupOffsetY() + 40);
-            tooltipPopup.show();
-        } else {
-            showCardHintPopup(data, parentComponent, parentPoint);
         }
-    }
-
-    private void showCardHintPopup(final TransferData data, final Component parentComponent, final Point parentPoint) {
-        MageCard cardPanel = data.getComponent().getTopPanelRef();
-
+        
         ThreadUtils.threadPool2.submit(new Runnable() {
             @Override
             public void run() {
@@ -445,7 +428,6 @@ public class MageActionCallback implements ActionCallback {
         }
 
         hideTooltipPopup();
-        cancelTimeout();
         Component parentComponent = SwingUtilities.getRoot(cardPanel);
         Point parentPoint = parentComponent.getLocationOnScreen();
 
@@ -482,7 +464,6 @@ public class MageActionCallback implements ActionCallback {
                 popupTextWindowOpen = true;
             }
             if (enlargedWindowState != EnlargedWindowState.CLOSED) {
-                cancelTimeout();
                 displayEnlargedCard(cardPanel.getOriginal(), data);
             }
         }
@@ -519,7 +500,7 @@ public class MageActionCallback implements ActionCallback {
 
     public void hideAll(UUID gameId) {
         hideTooltipPopup();
-        startHideTimeout();
+        this.hideEnlargedCard();
         this.popupTextWindowOpen = false;
         if (gameId != null) {
             ArrowBuilder.getBuilder().removeArrowsByType(gameId, ArrowBuilder.Type.TARGET);
@@ -705,17 +686,6 @@ public class MageActionCallback implements ActionCallback {
 
     private boolean isAbilityTextOverlayEnabled() {
         return PreferencesDialog.getCachedValue(PreferencesDialog.KEY_CARD_RENDERING_ABILITY_TEXT_OVERLAY, "true").equals("true");
-    }
-
-    private synchronized void startHideTimeout() {
-        cancelTimeout();
-        hideTimeout = timeoutExecutor.schedule(this::hideEnlargedCard, 700, TimeUnit.MILLISECONDS);
-    }
-
-    private synchronized void cancelTimeout() {
-        if (hideTimeout != null) {
-            hideTimeout.cancel(false);
-        }
     }
 
     public static MageCardSpace getHandOrStackMargins(Zone zone) {
