@@ -132,8 +132,17 @@ public class MageActionCallback implements ActionCallback {
 
     @Override
     public void mouseEntered(MouseEvent e, final TransferData data) {
-        this.popupData = data;
-        handleMouseMoveOverNewCard(data);
+        if (!Plugins.instance.isCardPluginLoaded()) {
+            return;
+        }
+        if (popupData == null || !popupData.getCard().equals(data.getCard())) {
+            this.popupData = data;
+            handleMouseMoveOverNewCard(data);
+        }
+        if (bigCard == null) {
+            return;
+        }
+        updateCardHints(data);
     }
 
     private void startCardHintPopup(final TransferData data, final Component parentComponent, final Point parentPoint) {
@@ -288,17 +297,6 @@ public class MageActionCallback implements ActionCallback {
 
     @Override
     public void mouseMoved(MouseEvent e, TransferData data) {
-        if (!Plugins.instance.isCardPluginLoaded()) {
-            return;
-        }
-        if (!popupData.getCard().equals(data.getCard())) {
-            this.popupData = data;
-            handleMouseMoveOverNewCard(data);
-        }
-        if (bigCard == null) {
-            return;
-        }
-        updateCardHints(data);
     }
 
     @Override
@@ -342,6 +340,7 @@ public class MageActionCallback implements ActionCallback {
             hideAll(null);
         }
         ///clearDragging((MageCard)data.component);
+        this.popupData = null;
     }
 
     @Override
