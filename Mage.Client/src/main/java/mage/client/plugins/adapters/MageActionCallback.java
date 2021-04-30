@@ -132,17 +132,15 @@ public class MageActionCallback implements ActionCallback {
 
     @Override
     public void mouseEntered(MouseEvent e, final TransferData data) {
-        if (!Plugins.instance.isCardPluginLoaded()) {
-            return;
-        }
-        if (popupData == null || !popupData.getCard().equals(data.getCard())) {
+        if (Plugins.instance.isCardPluginLoaded()) {
             this.popupData = data;
             handleMouseMoveOverNewCard(data);
+
+            if (bigCard == null) {
+                return;
+            }
+            updateCardHints(data);
         }
-        if (bigCard == null) {
-            return;
-        }
-        updateCardHints(data);
     }
 
     private void startCardHintPopup(final TransferData data, final Component parentComponent, final Point parentPoint) {
@@ -179,9 +177,7 @@ public class MageActionCallback implements ActionCallback {
             public void run() {
                 ThreadUtils.sleep(tooltipDelay);
 
-                if (tooltipCard == null
-                        || !tooltipCard.equals(data.getCard())
-                        || SessionHandler.getSession() == null
+                if (SessionHandler.getSession() == null
                         || !popupTextWindowOpen
                         || enlargedWindowState != EnlargedWindowState.CLOSED) {
                     return;
@@ -463,7 +459,6 @@ public class MageActionCallback implements ActionCallback {
         ArrowUtil.drawArrowsForBandedCards(data, parentPoint);
         ArrowUtil.drawArrowsForEnchantPlayers(data, parentPoint);
 
-        tooltipCard = data.getCard();
         startCardHintPopup(data, parentComponent, parentPoint);
     }
 
@@ -499,7 +494,6 @@ public class MageActionCallback implements ActionCallback {
     }
 
     public void hideTooltipPopup() {
-        this.tooltipCard = null;
         if (tooltipPopup != null) {
             tooltipPopup.hide();
         }
